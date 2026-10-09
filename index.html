@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>歴史総合③ 確認アプリ</title>
+<style>
+:root{
+ --bg:#0b1020; --panel:#121a2f; --panel2:#18233d; --text:#edf2ff; --muted:#aab5d1;
+ --accent:#7aa2ff; --accent2:#62d6b8; --danger:#ff7b7b; --warn:#ffd166; --line:#2a385d;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif;background:linear-gradient(180deg,#0a0f1f,#0e1630);color:var(--text);min-height:100vh}
+header{position:sticky;top:0;z-index:10;background:rgba(11,16,32,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.wrap{max-width:1120px;margin:auto;padding:18px}
+h1{font-size:clamp(22px,4vw,36px);margin:4px 0 6px}
+.sub{color:var(--muted);font-size:14px}
+nav{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+button,.btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer}
+button:hover,.btn:hover{border-color:var(--accent);transform:translateY(-1px)}
+button.active{background:var(--accent);color:#071020;border-color:transparent}
+main{max-width:1120px;margin:auto;padding:24px 18px 60px}
+.view{display:none}.view.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.card{background:rgba(18,26,47,.95);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 12px 32px rgba(0,0,0,.15)}
+.kpi{font-size:30px;font-weight:900}.label{color:var(--muted);font-size:13px}
+.progress{height:10px;background:#0a0f1f;border-radius:20px;overflow:hidden;border:1px solid var(--line)}
+.progress>div{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;border:1px solid var(--line);font-size:12px;color:var(--muted);margin-right:6px}
+.badge.hot{color:#1b1100;background:var(--warn);border-color:transparent;font-weight:900}
+.badge.color{color:white;background:linear-gradient(90deg,#e74d4d 0 50%,#3a8dde 50%);border-color:transparent}
+.qtext{font-size:clamp(19px,2.8vw,26px);line-height:1.6;font-weight:800;margin:16px 0}
+.choices{display:grid;gap:10px}
+.choice{text-align:left;width:100%;font-size:16px;padding:14px}
+.choice.correct{background:#113b32;border-color:var(--accent2)}
+.choice.wrong{background:#481f2b;border-color:var(--danger)}
+.feedback{margin-top:14px;padding:14px;border-radius:12px;background:#0d152a;line-height:1.65}
+.inputrow{display:flex;gap:8px;flex-wrap:wrap}
+input[type=text]{flex:1;min-width:230px;border-radius:12px;border:1px solid var(--line);background:#0d152a;color:white;padding:13px 14px;font-size:17px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+.small{font-size:13px;color:var(--muted)}
+.term{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
+.term:last-child{border-bottom:0}
+.term h3{margin:0 0 5px;font-size:17px}
+.term p{margin:0;color:var(--muted);line-height:1.5;font-size:14px}
+.checkbtn.learned{background:#123e35;border-color:var(--accent2);color:#bff8e8}
+.sectiontitle{margin:24px 0 10px}
+.notice{border-left:4px solid var(--warn);background:#2a2414;padding:14px 16px;border-radius:10px;margin:16px 0;line-height:1.7}
+.notice strong{color:#ffe08a}
+.source{margin:12px 0;padding:14px;border:1px solid var(--line);border-radius:14px;background:#0f172c}
+.source a{color:#9db9ff;font-weight:800}
+hr{border:0;border-top:1px solid var(--line);margin:22px 0}
+.pillrow{display:flex;gap:8px;flex-wrap:wrap}
+select{background:#0d152a;color:white;border:1px solid var(--line);border-radius:10px;padding:10px}
+@media(max-width:600px){.wrap,main{padding-left:12px;padding-right:12px}.card{padding:15px}}
+
+/* --- Mobile / touch fixes --- */
+html {
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
+}
+button, .btn, select, input {
+  font: inherit;
+}
+button, .btn {
+  -webkit-appearance: none;
+  appearance: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(122,162,255,.22);
+  user-select: none;
+  -webkit-user-select: none;
+  min-height: 46px;
+  position: relative;
+  z-index: 1;
+}
+button:disabled {
+  opacity: .78;
+}
+nav {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 3px;
+}
+nav::-webkit-scrollbar { display: none; }
+nav button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.choice {
+  min-height: 54px;
+  line-height: 1.45;
+}
+.inputrow input {
+  min-height: 48px;
+  font-size: 16px; /* prevents unwanted iOS zoom */
+}
+@media (hover:none), (pointer:coarse) {
+  button:hover, .btn:hover {
+    transform: none;
+  }
+  button:active, .btn:active {
+    transform: scale(.985);
+    filter: brightness(1.08);
+  }
+}
+@media(max-width:600px){
+  header { position: sticky; }
+  nav { margin-left: -2px; margin-right: -2px; }
+  nav button { padding: 11px 13px; min-height: 44px; }
+  .toolbar { display:grid; grid-template-columns:1fr; }
+  .toolbar > button, .toolbar > select, .toolbar > input { width:100%; }
+  .inputrow { display:grid; grid-template-columns:1fr; }
+  .inputrow input, .inputrow button { width:100%; }
+  .term { grid-template-columns:1fr; }
+  .checkbtn { width:100%; }
+  .choices { gap:12px; }
+  .choice { width:100%; }
+}
+
+</style>
+</head>
+<body>
+<header>
+ <div class="wrap">
+  <h1>歴史総合③ 確認アプリ</h1>
+  <div class="sub">授業プリント15ページをもとに作成。下線・色付き・空欄語句を優先して出題。</div>
+  <nav>
+    <button type="button" data-view="home" class="active">ホーム</button>
+    <button type="button" data-view="quiz">4択・記述</button>
+    <button type="button" data-view="terms">用語チェック</button>
+    <button type="button" data-view="mistakes">間違い復習</button>
+    <button type="button" data-view="sources">資料・検証</button>
+  </nav>
+ </div>
+</header>
+<main>
+<section id="home" class="view active">
+
+ <div class="notice" id="mobileHint">
+   <strong>スマホでの使い方:</strong> この画面内のプレビューでボタンが反応しない場合は、
+   ファイルをSafari / Chromeで開いてください。今回の版ではタップ領域とiPhone向け操作を改善しています。
+ </div>
+
+ <div class="grid">
+  <div class="card"><div class="label">問題数</div><div class="kpi" id="totalQ"></div><div class="small">4択＋記述</div></div>
+  <div class="card"><div class="label">正答率</div><div class="kpi" id="accuracy">0%</div><div class="progress"><div id="accbar"></div></div></div>
+  <div class="card"><div class="label">覚えた用語</div><div class="kpi" id="termProgress">0 / 0</div><div class="progress"><div id="termbar"></div></div></div>
+  <div class="card"><div class="label">要復習</div><div class="kpi" id="mistakeCount">0</div><div class="small">間違えた問題を自動保存</div></div>
+ </div>
+ <div class="notice"><strong>重要:</strong> p.6の「日清戦争／日露戦争」の戦費表は、プリント上では数値が逆に見えます。外部資料で確認すると、日清戦争は約2億円、日露戦争は約17億円以上です。このアプリでは検証済みの値で出題します。</div>
+ <div class="card">
+   <h2>おすすめの進め方</h2>
+   <p>最初は「重要問題だけ」で20〜30問 → 間違い復習 → 「用語チェック」で人物・事件名を確認、の順がおすすめです。進捗はこのブラウザに保存されます。</p>
+   <div class="toolbar">
+     <button type="button" onclick="startQuiz('priority',20)">重要問題を20問</button>
+     <button type="button" onclick="startQuiz('all',20)">ランダム20問</button>
+     <button type="button" onclick="startQuiz('all',999)">全問題</button>
+   </div>
+   <div class="pillrow">
+     <span class="badge hot">★ 下線・空欄優先</span>
+     <span class="badge color">色付き強調</span>
+     <span class="badge">p.1〜15対応</span>
+   </div>
+ </div>
+</section>
+
+<section id="quiz" class="view">
+ <div class="toolbar">
+  <select id="quizMode">
+   <option value="priority">重要問題中心</option>
+   <option value="all">全範囲</option>
+   <option value="input">記述だけ</option>
+   <option value="mcq">4択だけ</option>
+  </select>
+  <select id="quizLen">
+   <option value="10">10問</option>
+   <option value="20" selected>20問</option>
+   <option value="40">40問</option>
+   <option value="999">全問</option>
+  </select>
+  <button type="button" onclick="startFromControls()">開始 / やり直し</button>
+ </div>
+ <div id="quizArea" class="card"><p>上の条件を選び、「開始 / やり直し」を押してください。</p></div>
+</section>
+
+<section id="terms" class="view">
+ <div class="toolbar">
+  <input id="termSearch" type="text" placeholder="用語を検索…" oninput="renderTerms()">
+  <button type="button" onclick="resetTerms()">チェックをリセット</button>
+ </div>
+ <div id="termArea"></div>
+</section>
+
+<section id="mistakes" class="view">
+ <div class="toolbar"><button type="button" onclick="startMistakeQuiz()">間違いだけ出題</button><button type="button" onclick="clearMistakes()">履歴を消す</button></div>
+ <div id="mistakeArea" class="card"></div>
+</section>
+
+<section id="sources" class="view">
+ <div class="notice"><strong>Web検証方針:</strong> 授業プリントを基本にしつつ、条約・戦争・国際連盟などは外務省、国立公文書館、アジア歴史資料センター、国連、日本銀行などの公開資料で照合しています。歴史上の死者数のように資料によって幅がある数値は、原則として断定問題にしていません。</div>
+ <div id="sourceArea"></div>
+</section>
+</main>
+
+<script>
+const QUESTIONS = [{"id": 1, "page": 1, "section": "初期外交", "type": "mcq", "priority": true, "q": "1871年、明治政府がアメリカ・ヨーロッパへ派遣した使節団は？", "choices": ["岩倉使節団", "遣欧使節団", "天正遣欧少年使節", "慶長遣欧使節"], "a": "岩倉使節団", "ex": "不平等条約改正の予備交渉と欧米視察を目的に派遣され、1873年に帰国。"}, {"id": 2, "page": 1, "section": "初期外交", "type": "input", "priority": true, "q": "岩倉使節団の全権大使は誰？", "answers": ["岩倉具視"], "ex": "随行員には大久保利通・伊藤博文・木戸孝允・久米邦武らがいた。"}, {"id": 3, "page": 1, "section": "初期外交", "type": "mcq", "priority": true, "q": "1871年、日本と清が結んだ、日本にとって最初の対等条約は？", "choices": ["日清修好条規", "日朝修好条規", "下関条約", "天津条約"], "a": "日清修好条規", "ex": "相互に開港し、領事裁判権を認めあう内容。"}, {"id": 4, "page": 1, "section": "初期外交", "type": "input", "priority": true, "q": "1873年、征韓派が敗れて下野した政変を何という？", "answers": ["征韓論政変", "明治六年の政変"], "ex": "征韓派と内治派が対立し、征韓派が政府を去った。"}, {"id": 5, "page": 1, "section": "初期外交", "type": "mcq", "priority": false, "q": "次のうち「征韓派」に含まれない人物は？", "choices": ["西郷隆盛", "板垣退助", "江藤新平", "岩倉具視"], "a": "岩倉具視", "ex": "岩倉具視は大久保利通・伊藤博文・木戸孝允らとともに内治派。"}, {"id": 6, "page": 2, "section": "朝鮮との外交", "type": "input", "priority": true, "q": "1875年、日本の軍艦が江華島付近で朝鮮側砲台と交戦した事件は？", "answers": ["江華島事件"], "ex": "翌1876年の日朝修好条規につながった。"}, {"id": 7, "page": 2, "section": "朝鮮との外交", "type": "mcq", "priority": true, "q": "1876年に日本が朝鮮と結んだ不平等条約は？", "choices": ["日朝修好条規", "日清修好条規", "済物浦条約", "漢城条約"], "a": "日朝修好条規", "ex": "清の宗主権を否定し、釜山・仁川・元山の開港、日本の領事裁判権などを定めた。"}, {"id": 8, "page": 2, "section": "朝鮮との外交", "type": "mcq", "priority": true, "q": "日朝修好条規で開港した3港の組合せは？", "choices": ["釜山・仁川・元山", "釜山・ソウル・済州", "仁川・平壌・元山", "釜山・仁川・平壌"], "a": "釜山・仁川・元山", "ex": "プリントの空欄・下線部分。"}, {"id": 9, "page": 2, "section": "朝鮮との外交", "type": "input", "priority": true, "q": "1882年、親日派の閔妃政権に対して起こったクーデターは？", "answers": ["壬午事変"], "ex": "事件後、日本は済物浦条約で軍隊駐屯権などを得た。"}, {"id": 10, "page": 2, "section": "朝鮮との外交", "type": "mcq", "priority": true, "q": "壬午事変で保守派が政権を樹立した際の中心人物で、国王の父にあたる人物は？", "choices": ["大院君", "閔妃", "金玉均", "朴泳孝"], "a": "大院君", "ex": "清の介入で大院君政権は崩壊し、閔氏政権が復活。"}, {"id": 11, "page": 2, "section": "朝鮮との外交", "type": "input", "priority": true, "q": "1884年、金玉均・朴泳孝ら独立党が起こしたクーデターは？", "answers": ["甲申事変"], "ex": "失敗し、日本の朝鮮に対する政治的影響力は低下。"}, {"id": 12, "page": 2, "section": "朝鮮との外交", "type": "input", "priority": true, "q": "甲申事変を起こした独立党の代表的人物を1人答えよ。", "answers": ["金玉均", "朴泳孝"], "ex": "プリントでは金玉均が空欄語句として示されている。"}, {"id": 13, "page": 2, "section": "朝鮮との外交", "type": "input", "priority": true, "q": "1885年、日清間で朝鮮からの撤兵と出兵時の通告を定めた条約は？", "answers": ["天津条約"], "ex": "日朝間では漢城条約が結ばれた。"}, {"id": 14, "page": 2, "section": "朝鮮との外交", "type": "input", "priority": true, "q": "1885年、『時事新報』に『脱亜論』を発表した人物は？", "answers": ["福沢諭吉"], "ex": "独立党支援者でもあった。"}, {"id": 15, "page": 3, "section": "日清戦争", "type": "input", "priority": true, "q": "1894年、朝鮮南部で東学信者を中心に起こった農民蜂起を何という？", "answers": ["甲午農民戦争", "東学農民運動"], "ex": "清の派兵を見て日本も派兵し、日清戦争へつながった。"}, {"id": 16, "page": 3, "section": "日清戦争", "type": "mcq", "priority": true, "q": "日清戦争開戦のきっかけとなった海戦は？", "choices": ["豊島沖海戦", "黄海海戦", "日本海海戦", "威海衛海戦"], "a": "豊島沖海戦", "ex": "1894年、朝鮮支配をめぐる対立の中で開戦。"}, {"id": 17, "page": 3, "section": "日清戦争", "type": "input", "priority": true, "q": "1895年、日本の伊藤博文・陸奥宗光と清の李鴻章が結んだ講和条約は？", "answers": ["下関条約"], "ex": "清は朝鮮の独立承認、賠償金、遼東半島・台湾・澎湖諸島の割譲などを認めた。"}, {"id": 18, "page": 3, "section": "日清戦争", "type": "mcq", "priority": true, "q": "1895年の三国干渉を行った3国は？", "choices": ["ロシア・フランス・ドイツ", "イギリス・フランス・ロシア", "ロシア・ドイツ・アメリカ", "フランス・ドイツ・イタリア"], "a": "ロシア・フランス・ドイツ", "ex": "日本に遼東半島返還を要求した。"}, {"id": 19, "page": 3, "section": "日清戦争", "type": "mcq", "priority": true, "q": "1897年、朝鮮が国号を大韓帝国に改めたとき、皇帝に即位した人物は？", "choices": ["高宗", "純宗", "大院君", "袁世凱"], "a": "高宗", "ex": "1910年の韓国併合まで日本では「韓国」と呼称。"}, {"id": 20, "page": 3, "section": "日清戦争", "type": "input", "priority": true, "q": "日清戦争の賠償金が建設資金に使われた製鉄所は？", "answers": ["八幡製鉄所"], "ex": "プリントの空欄語句。"}, {"id": 21, "page": 4, "section": "清末期の改革", "type": "input", "priority": true, "q": "洋務運動が掲げた「伝統的政治体制のもとで西洋技術を導入する」考えを四字で答えよ。", "answers": ["中体西用"], "ex": "李鴻章ら漢人官僚が推進。"}, {"id": 22, "page": 4, "section": "清末期の改革", "type": "mcq", "priority": true, "q": "変法運動（1895〜1898）を推進した人物の組合せは？", "choices": ["康有為・梁啓超", "李鴻章・袁世凱", "孫文・袁世凱", "西太后・李鴻章"], "a": "康有為・梁啓超", "ex": "立憲君主制をめざした。"}, {"id": 23, "page": 4, "section": "清末期の改革", "type": "input", "priority": true, "q": "1898年、西太后ら保守派のクーデターで変法運動が失敗した政変は？", "answers": ["戊戌の政変"], "ex": "康有為は失脚し、光緒帝は幽閉された。"}, {"id": 24, "page": 4, "section": "列強の中国分割", "type": "mcq", "priority": false, "q": "中国分割の中で、ドイツが租借したのは？", "choices": ["膠州湾", "旅順・大連", "威海衛・九龍半島", "広州湾"], "a": "膠州湾", "ex": "青島市の建設につながる。"}, {"id": 25, "page": 4, "section": "列強の中国分割", "type": "input", "priority": true, "q": "アメリカ国務長官ジョン・ヘイが提唱した、中国に対する原則を何という？", "answers": ["門戸開放宣言", "門戸開放通牒"], "ex": "領土保全・門戸開放・機会均等を主張。"}, {"id": 26, "page": 5, "section": "義和団と北清事変", "type": "input", "priority": true, "q": "1900年、「扶清滅洋」を掲げて外国勢力排斥運動を展開した事件は？", "answers": ["義和団事件", "義和団運動"], "ex": "勢力拡大後、北清事変へ。"}, {"id": 27, "page": 5, "section": "義和団と北清事変", "type": "input", "priority": true, "q": "義和団が北京を占拠し、清が列強に宣戦布告して8か国連合軍が出兵した事件は？", "answers": ["北清事変"], "ex": "北京議定書が締結された。"}, {"id": 28, "page": 5, "section": "日英同盟", "type": "input", "priority": true, "q": "1902年、日本とイギリスがロシアの南下政策を警戒して結んだ同盟は？", "answers": ["日英同盟"], "ex": "桂太郎内閣期。"}, {"id": 29, "page": 6, "section": "日露戦争", "type": "input", "priority": true, "q": "1904年、日本とロシアの間で開戦した戦争は？", "answers": ["日露戦争"], "ex": "満州・韓国をめぐる対立が背景。"}, {"id": 30, "page": 6, "section": "日露戦争", "type": "input", "priority": true, "q": "1904年2月、日露戦争への協力を韓国に要求し、日本の軍事行動の自由などを定めた文書は？", "answers": ["日韓議定書"], "ex": "日露戦争中、日本は韓国の植民地化を進めた。"}, {"id": 31, "page": 6, "section": "日露戦争", "type": "input", "priority": true, "q": "1905年1月、ロシアで第1次ロシア革命のきっかけとなった事件は？", "answers": ["血の日曜日事件"], "ex": "ロシア国内の革命運動激化は講和受け入れの背景にもなった。"}, {"id": 32, "page": 6, "section": "日露戦争", "type": "input", "priority": true, "q": "1905年9月、ルーズヴェルトの仲介で結ばれた日露戦争の講和条約は？", "answers": ["ポーツマス条約", "ポーツマス講和条約"], "ex": "日本は韓国での指導権、旅順・大連の租借権、南樺太などを得たが、賠償金はなかった。"}, {"id": 33, "page": 7, "section": "韓国併合", "type": "input", "priority": true, "q": "1905年9月、講和条約に賠償金がないことなどへの反発から起こった民衆暴動は？", "answers": ["日比谷焼打ち事件"], "ex": "東京で戒厳令が出された。"}, {"id": 34, "page": 7, "section": "韓国併合", "type": "mcq", "priority": true, "q": "第二次日韓協約で設置された韓国統監府の初代統監は？", "choices": ["伊藤博文", "寺内正毅", "小村寿太郎", "桂太郎"], "a": "伊藤博文", "ex": "韓国の外交権を接収し、漢城に統監府を置いた。"}, {"id": 35, "page": 7, "section": "韓国併合", "type": "input", "priority": true, "q": "1907年、韓国皇帝が第二次日韓協約の無効を訴えるため密使を送った事件は？", "answers": ["ハーグ密使事件"], "ex": "第二回万国平和会議での訴えは受け入れられなかった。"}, {"id": 36, "page": 7, "section": "韓国併合", "type": "input", "priority": true, "q": "1910年8月、日本と韓国が結んだ併合の条約は？", "answers": ["韓国併合条約"], "ex": "日本側は寺内正毅、韓国側は李完用。"}, {"id": 37, "page": 7, "section": "韓国併合", "type": "input", "priority": true, "q": "1910年10月、京城に設置された日本の朝鮮統治機関は？", "answers": ["朝鮮総督府"], "ex": "初代総督は寺内正毅。"}, {"id": 38, "page": 7, "section": "辛亥革命", "type": "input", "priority": true, "q": "孫文が掲げた「民族の独立・民権の伸張・民生の安定」の思想を何という？", "answers": ["三民主義"], "ex": "中国同盟会を中心に革命運動を展開。"}, {"id": 39, "page": 7, "section": "辛亥革命", "type": "mcq", "priority": true, "q": "1912年1月、中華民国の臨時大総統に就任した人物は？", "choices": ["孫文", "袁世凱", "溥儀", "康有為"], "a": "孫文", "ex": "2月に宣統帝が退位し清朝が滅亡、3月に袁世凱が臨時大総統へ。"}, {"id": 40, "page": 7, "section": "辛亥革命", "type": "mcq", "priority": true, "q": "清朝最後の皇帝（宣統帝）は誰？", "choices": ["溥儀", "光緒帝", "同治帝", "高宗"], "a": "溥儀", "ex": "1912年2月に退位。"}, {"id": 41, "page": 8, "section": "帝国主義", "type": "mcq", "priority": true, "q": "第2次産業革命で主要な動力となった組合せは？", "choices": ["石油・電力", "石炭・蒸気", "木炭・水力", "原子力・電力"], "a": "石油・電力", "ex": "重化学工業・電機工業・金属工業が発展。"}, {"id": 42, "page": 8, "section": "ビスマルク体制", "type": "input", "priority": true, "q": "19世紀末、ドイツの宰相として複雑な同盟網を築いた人物は？", "answers": ["ビスマルク", "オットー・フォン・ビスマルク"], "ex": "ロシアの孤立を避けつつフランスを孤立させる外交を展開。"}, {"id": 43, "page": 8, "section": "ビスマルク体制", "type": "input", "priority": true, "q": "1890年、ヴィルヘルム2世がパン＝ゲルマン主義を掲げて進出しようとした「ヨーロッパの火薬庫」となる地域は？", "answers": ["バルカン半島"], "ex": "のちに列強の利害が交錯する。"}, {"id": 44, "page": 9, "section": "英独対立", "type": "mcq", "priority": true, "q": "ドイツの「3B政策」の3都市は？", "choices": ["ベルリン・ビザンティウム（イスタンブル）・バグダード", "ベルリン・ブリュッセル・バグダード", "ベルリン・ブカレスト・バグダード", "ベルリン・ベオグラード・バスラ"], "a": "ベルリン・ビザンティウム（イスタンブル）・バグダード", "ex": "バグダード鉄道建設と結びつく。"}, {"id": 45, "page": 9, "section": "英独対立", "type": "mcq", "priority": true, "q": "イギリスの「3C政策」の3地点は？", "choices": ["カイロ・ケープタウン・カルカッタ", "カイロ・ケープタウン・カナダ", "カイロ・カルカッタ・キャンベラ", "ケープタウン・カルカッタ・香港"], "a": "カイロ・ケープタウン・カルカッタ", "ex": "ドイツの3B政策と対立。"}, {"id": 46, "page": 9, "section": "英独対立", "type": "input", "priority": true, "q": "1907年、英露協商の成立により完成した英・仏・露の協力関係は？", "answers": ["三国協商"], "ex": "ドイツ中心の三国同盟と対立。"}, {"id": 47, "page": 9, "section": "バルカン問題", "type": "mcq", "priority": false, "q": "オスマン帝国の衰退とロシアの南下政策にヨーロッパ諸国が介入して起こった国際問題を何という？", "choices": ["東方問題", "バルカン同盟", "東亜問題", "民族問題"], "a": "東方問題", "ex": "クリミア戦争などにつながる。"}, {"id": 48, "page": 10, "section": "バルカン問題", "type": "input", "priority": true, "q": "1876年、改革派宰相ミドハト＝パシャが制定したアジア初の憲法は？", "answers": ["ミドハト憲法"], "ex": "アブデュルハミト2世が露土戦争を理由に停止。"}, {"id": 49, "page": 10, "section": "バルカン問題", "type": "input", "priority": true, "q": "スラヴ系諸民族の統一・連合を唱え、ロシアが支援した思想は？", "answers": ["パン＝スラヴ主義", "パンスラヴ主義"], "ex": "ロシアの南下政策と結びついた。"}, {"id": 50, "page": 10, "section": "バルカン問題", "type": "mcq", "priority": false, "q": "1877年にロシアとオスマン帝国の間で起こった戦争は？", "choices": ["露土戦争", "クリミア戦争", "普仏戦争", "バルカン戦争"], "a": "露土戦争", "ex": "ロシア勝利後、サン＝ステファノ条約が結ばれた。"}, {"id": 51, "page": 10, "section": "バルカン問題", "type": "input", "priority": true, "q": "露土戦争後、ロシアの南下を大きく認めた講和条約は？", "answers": ["サン＝ステファノ条約"], "ex": "その内容に英・墺が反発し、ベルリン会議へ。"}, {"id": 52, "page": 10, "section": "バルカン問題", "type": "input", "priority": true, "q": "ベルリン条約でオーストリアが管理権を得た地域は？", "answers": ["ボスニア・ヘルツェゴヴィナ", "ボスニア＝ヘルツェゴヴィナ", "ボスニアヘルツェゴビナ"], "ex": "1908年、オーストリアは青年トルコ革命の混乱に乗じて併合。"}, {"id": 53, "page": 10, "section": "バルカン問題", "type": "input", "priority": false, "q": "1908年、オスマン帝国で起こり、ミドハト憲法を復活させた革命は？", "answers": ["青年トルコ革命"], "ex": "「統一と進歩団」が中心。"}, {"id": 54, "page": 10, "section": "バルカン問題", "type": "mcq", "priority": true, "q": "1908年、ボスニア＝ヘルツェゴヴィナ併合を進めたオーストリアと強く対立した国は？", "choices": ["セルビア", "ブルガリア", "ルーマニア", "ギリシャ"], "a": "セルビア", "ex": "セルビアは南スラヴ統一を志向。"}, {"id": 55, "page": 11, "section": "バルカン戦争", "type": "mcq", "priority": false, "q": "1912年の第1次バルカン戦争で勝利したのは？", "choices": ["バルカン同盟", "オスマン帝国", "オーストリア", "ロシア"], "a": "バルカン同盟", "ex": "セルビア・モンテネグロ・ブルガリア・ギリシャなど。"}, {"id": 56, "page": 11, "section": "バルカン戦争", "type": "input", "priority": false, "q": "列強の思惑が複雑にからみ合ったバルカン半島は何と呼ばれた？", "answers": ["ヨーロッパの火薬庫"], "ex": "第一次世界大戦の発火点となる。"}, {"id": 57, "page": 12, "section": "第一次世界大戦", "type": "input", "priority": true, "q": "1914年6月、オーストリア皇太子夫妻がセルビア人青年に暗殺された事件は？", "answers": ["サラエボ事件"], "ex": "7月にオーストリアがセルビアへ宣戦布告し、世界大戦へ拡大。"}, {"id": 58, "page": 12, "section": "第一次世界大戦", "type": "mcq", "priority": true, "color": true, "q": "第一次世界大戦の同盟国（中央同盟国）としてプリントに示される組合せは？", "choices": ["ドイツ・オーストリア・ブルガリア・オスマン帝国", "イギリス・フランス・ロシア・日本", "ドイツ・ロシア・イタリア・日本", "オーストリア・セルビア・ロシア・フランス"], "a": "ドイツ・オーストリア・ブルガリア・オスマン帝国", "ex": "プリントでは赤色で強調。"}, {"id": 59, "page": 12, "section": "第一次世界大戦", "type": "mcq", "priority": true, "color": true, "q": "第一次世界大戦の協商国（連合国）側として適切なのは？", "choices": ["イギリス・フランス・ロシア・セルビア・日本など", "ドイツ・オーストリア・ブルガリア・オスマン帝国", "アメリカ・イタリア・スイスだけ", "ドイツ・ロシア・日本"], "a": "イギリス・フランス・ロシア・セルビア・日本など", "ex": "プリントでは青色で強調。"}, {"id": 60, "page": 12, "section": "第一次世界大戦", "type": "input", "priority": false, "q": "1914年、東部戦線でドイツ軍がロシア軍を撃破した戦いは？", "answers": ["タンネンベルクの戦い", "タンネンベルク戦"], "ex": "ロシア側の打撃が大きかった。"}, {"id": 61, "page": 12, "section": "第一次世界大戦と東アジア", "type": "mcq", "priority": true, "q": "第一次世界大戦で日本がドイツから占領した中国の拠点とオセアニアの領土は？", "choices": ["青島・南洋諸島", "大連・樺太", "香港・台湾", "上海・海南島"], "a": "青島・南洋諸島", "ex": "日英同盟を口実にドイツへ宣戦。"}, {"id": 62, "page": 12, "section": "第一次世界大戦と東アジア", "type": "input", "priority": true, "q": "1915年、日本が袁世凱政権に提出し承認させた要求は？", "answers": ["二十一か条の要求", "21か条の要求", "二十一ヶ条の要求"], "ex": "中国の対日感情を急速に悪化させた。"}, {"id": 63, "page": 12, "section": "第一次世界大戦の特徴", "type": "input", "priority": true, "q": "国家の人員・経済・産業など国力全体を戦争に動員する戦争形態を何という？", "answers": ["総力戦"], "ex": "第一次世界大戦の大きな特徴。"}, {"id": 64, "page": 13, "section": "第一次世界大戦時の外交", "type": "input", "priority": true, "q": "1915年、イギリスがアラブ人に戦後の独立を認めると約束した協定は？", "answers": ["フセイン＝マクマホン協定", "フセイン・マクマホン協定"], "ex": "オスマン帝国への反乱を促した。"}, {"id": 65, "page": 13, "section": "第一次世界大戦時の外交", "type": "input", "priority": true, "q": "1916年、イギリス・フランス・ロシアがオスマン帝国領分割を取り決めた秘密協定は？", "answers": ["サイクス・ピコ協定", "サイクス＝ピコ協定"], "ex": "中東問題の背景の一つ。"}, {"id": 66, "page": 13, "section": "第一次世界大戦時の外交", "type": "input", "priority": true, "q": "1917年、イギリスがユダヤ人にパレスチナでの「民族的郷土」建設への支持を表明した宣言は？", "answers": ["バルフォア宣言"], "ex": "パレスチナ問題の歴史的背景として重要。"}, {"id": 67, "page": 14, "section": "第一次世界大戦後半", "type": "mcq", "priority": true, "color": true, "q": "1917年、ドイツの無制限潜水艦作戦を参戦の口実とした国は？", "choices": ["アメリカ", "イタリア", "日本", "オスマン帝国"], "a": "アメリカ", "ex": "プリントでは「ドイツ」が赤、「アメリカ」が青で強調。"}, {"id": 68, "page": 14, "section": "第一次世界大戦後半", "type": "input", "priority": true, "q": "1917年11月、アメリカが日本の中国における権益を一定程度承認した協定は？", "answers": ["石井・ランシング協定", "石井＝ランシング協定"], "ex": "日米間の協定。"}, {"id": 69, "page": 14, "section": "第一次世界大戦後半", "type": "input", "priority": true, "q": "1918年、ウィルソン大統領が発表した和平原則は？", "answers": ["十四か条", "十四カ条", "14か条", "十四ヶ条"], "ex": "秘密外交廃止・海洋の自由・軍備縮小・民族自決・国際平和機構など。"}, {"id": 70, "page": 14, "section": "第一次世界大戦後半", "type": "input", "priority": true, "q": "1918年、ソヴィエト政権のロシアが同盟国側と結んで戦線を離脱した条約は？", "answers": ["ブレスト＝リトフスク条約", "ブレスト・リトフスク条約"], "ex": "ロシアが単独講和。"}, {"id": 71, "page": 14, "section": "第一次世界大戦終結", "type": "input", "priority": true, "q": "1919年、第一次世界大戦後の講和条件を協議するため開かれた会議は？", "answers": ["パリ講和会議"], "ex": "ウィルソンの十四か条を基礎の一つとして進められた。"}, {"id": 72, "page": 14, "section": "第一次世界大戦終結", "type": "input", "priority": true, "q": "ドイツと連合国の間で結ばれた講和条約は？", "answers": ["ヴェルサイユ条約"], "ex": "ドイツに領土・軍備・賠償など厳しい条件を課した。"}, {"id": 73, "page": 15, "section": "ヴェルサイユ体制", "type": "input", "priority": true, "q": "1919年、オーストリアと連合国の間で結ばれた条約は？", "answers": ["サン＝ジェルマン条約", "サン・ジェルマン条約"], "ex": "オーストリア＝ハンガリー帝国解体後の秩序に関わる。"}, {"id": 74, "page": 15, "section": "ヴェルサイユ体制", "type": "input", "priority": true, "q": "1920年、オスマン帝国と連合国の間で結ばれた条約は？", "answers": ["セーヴル条約", "セーブル条約"], "ex": "オスマン帝国の領土を大幅に縮小。"}, {"id": 75, "page": 15, "section": "国際連盟", "type": "input", "priority": true, "q": "国際連盟の本部が置かれたスイスの都市は？", "answers": ["ジュネーヴ", "ジュネーブ"], "ex": "国際連盟は1920年に発足。"}, {"id": 76, "page": 15, "section": "国際連盟", "type": "mcq", "priority": true, "q": "国際連盟の発足時、常任理事国となった4か国は？", "choices": ["イギリス・フランス・日本・イタリア", "アメリカ・イギリス・フランス・日本", "イギリス・フランス・ロシア・日本", "アメリカ・フランス・日本・イタリア"], "a": "イギリス・フランス・日本・イタリア", "ex": "アメリカは上院の反対で加盟しなかった。"}, {"id": 77, "page": 15, "section": "国際連盟", "type": "mcq", "priority": true, "q": "国際連盟の付属・関連機関としてプリントに挙げられている組合せは？", "choices": ["常設国際司法裁判所・国際労働機関（ILO）", "国際通貨基金・世界銀行", "WHO・UNESCO", "国際連合総会・安全保障理事会"], "a": "常設国際司法裁判所・国際労働機関（ILO）", "ex": "国際紛争処理と労働問題に関わる機関。"}, {"id": 78, "page": 15, "section": "国際連盟", "type": "mcq", "priority": true, "q": "国際連盟の弱点として正しいものは？", "choices": ["侵略国への強制手段が主に経済制裁に限られ、提唱国アメリカも不参加だった", "常任理事国に拒否権があり何も決められなかった", "軍隊を常設し世界各地に派遣した", "加盟国は必ずしも全会一致でなく多数決のみだった"], "a": "侵略国への強制手段が主に経済制裁に限られ、提唱国アメリカも不参加だった", "ex": "プリントの「問題点」の重要部分。"}, {"id": 79, "page": 6, "section": "Web検証", "type": "mcq", "priority": true, "verified": true, "q": "【Web検証】日清戦争と日露戦争の戦費の組合せとして正しいのは？", "choices": ["日清戦争 約2億円／日露戦争 約17億円以上", "日清戦争 約17億円／日露戦争 約2億円", "どちらも約2億円", "どちらも約17億円"], "a": "日清戦争 約2億円／日露戦争 約17億円以上", "ex": "プリントp.6の表は日清・日露の数値が逆に見えるため、外部資料で修正。日本銀行百年史は日露戦争の臨時軍事費予算を17億4642万円としている。"}];
+const TERMS = [["初期外交", 1, "岩倉使節団", "1871年派遣。不平等条約改正の予備交渉・欧米視察。", true], ["初期外交", 1, "岩倉具視", "岩倉使節団の全権大使。", true], ["初期外交", 1, "日清修好条規", "1871年、日本と清の最初の対等条約。", true], ["初期外交", 1, "征韓論政変", "1873年。征韓派が敗れて下野。", true], ["朝鮮外交", 2, "江華島事件", "1875年。翌年の日朝修好条規へ。", true], ["朝鮮外交", 2, "日朝修好条規", "1876年。朝鮮に対して日本が強制した不平等条約。", true], ["朝鮮外交", 2, "壬午事変", "1882年。親日派閔氏政権への反乱。", true], ["朝鮮外交", 2, "大院君", "国王の父。壬午事変で保守派政権の中心。", true], ["朝鮮外交", 2, "甲申事変", "1884年。独立党のクーデター。", true], ["朝鮮外交", 2, "金玉均", "甲申事変を起こした独立党の中心人物。", true], ["朝鮮外交", 2, "天津条約", "1885年。日清が朝鮮から撤兵、出兵時通告。", true], ["朝鮮外交", 2, "福沢諭吉", "1885年『脱亜論』。", true], ["日清戦争", 3, "甲午農民戦争", "1894年。東学信者を中心とする農民蜂起。", true], ["日清戦争", 3, "下関条約", "1895年の日清戦争講和条約。", true], ["日清戦争", 3, "三国干渉", "ロシア・フランス・ドイツが遼東半島返還を要求。", true], ["日清戦争", 3, "八幡製鉄所", "日清戦争賠償金が建設資金にも使われた。", true], ["清末改革", 4, "中体西用", "洋務運動の標語。", true], ["清末改革", 4, "康有為・梁啓超", "変法運動の中心。", true], ["清末改革", 4, "戊戌の政変", "1898年、変法運動を挫折させた政変。", true], ["中国分割", 4, "門戸開放宣言", "ジョン・ヘイ。領土保全・門戸開放・機会均等。", true], ["義和団・日英同盟", 5, "義和団事件", "1900年。扶清滅洋。", true], ["義和団・日英同盟", 5, "北清事変", "8か国連合軍が出兵。", true], ["義和団・日英同盟", 5, "日英同盟", "1902年。ロシア南下を警戒。", true], ["日露戦争", 6, "日露戦争", "1904〜1905年。満州・韓国をめぐる対立。", true], ["日露戦争", 6, "日韓議定書", "1904年2月。韓国内での日本軍行動を認めさせる。", true], ["日露戦争", 6, "血の日曜日事件", "1905年1月。第1次ロシア革命へ。", true], ["日露戦争", 6, "ポーツマス条約", "1905年9月。賠償金なし。", true], ["韓国併合", 7, "日比谷焼打ち事件", "ポーツマス条約への不満から発生。", true], ["韓国併合", 7, "韓国統監府", "第二次日韓協約で設置。初代統監 伊藤博文。", true], ["韓国併合", 7, "ハーグ密使事件", "1907年。韓国皇帝が密使を派遣。", true], ["韓国併合", 7, "韓国併合条約", "1910年8月。", true], ["韓国併合", 7, "朝鮮総督府", "1910年10月設置。初代総督 寺内正毅。", true], ["辛亥革命", 7, "三民主義", "民族・民権・民生。", true], ["辛亥革命", 7, "孫文", "1912年1月、中華民国臨時大総統。", true], ["帝国主義", 8, "石油・電力", "第2次産業革命の主要動力。", true], ["帝国主義", 8, "ビスマルク", "ドイツ宰相。同盟外交を展開。", true], ["帝国主義", 8, "バルカン半島", "列強の進出・民族問題が集中。", true], ["英独対立", 9, "3B政策", "ベルリン・ビザンティウム・バグダード。", true], ["英独対立", 9, "3C政策", "カイロ・ケープタウン・カルカッタ。", true], ["英独対立", 9, "三国協商", "英・仏・露。", true], ["バルカン", 10, "ミドハト憲法", "1876年、オスマン帝国。", true], ["バルカン", 10, "パン＝スラヴ主義", "ロシアが支援。", true], ["バルカン", 10, "サン＝ステファノ条約", "露土戦争後。", true], ["バルカン", 10, "ボスニア＝ヘルツェゴヴィナ", "ベルリン条約でオーストリアが管理権。", true], ["バルカン", 10, "セルビア", "オーストリアの進出と対立。", true], ["バルカン", 10, "ブルガリア", "1908年オスマン帝国から独立。", true], ["バルカン", 11, "ヨーロッパの火薬庫", "バルカン半島の別称。", true], ["第一次世界大戦", 12, "サラエボ事件", "1914年6月。", true], ["第一次世界大戦", 12, "同盟国", "ドイツ・オーストリア・ブルガリア・オスマン帝国。", true], ["第一次世界大戦", 12, "協商国（連合国）", "イギリス・フランス・ロシア・セルビア・日本など。", true], ["第一次世界大戦", 12, "青島・南洋諸島", "日本がドイツ領から占領。", true], ["第一次世界大戦", 12, "二十一か条の要求", "1915年、袁世凱政権へ。", true], ["第一次世界大戦", 12, "総力戦", "国力全体を戦争に動員。", true], ["戦時外交", 13, "フセイン＝マクマホン協定", "1915年。アラブ人に独立を約束。", true], ["戦時外交", 13, "サイクス・ピコ協定", "1916年。英仏露によるオスマン領分割。", true], ["戦時外交", 13, "バルフォア宣言", "1917年。ユダヤ人の民族的郷土を支持。", true], ["大戦後半", 14, "無制限潜水艦作戦", "アメリカ参戦の口実。", true], ["大戦後半", 14, "石井・ランシング協定", "1917年の日米協定。", true], ["大戦後半", 14, "十四か条", "1918年、ウィルソン。", true], ["大戦後半", 14, "ブレスト＝リトフスク条約", "ロシアの単独講和。", true], ["大戦終結", 14, "パリ講和会議", "1919年。", true], ["大戦終結", 14, "ヴェルサイユ条約", "ドイツと連合国。", true], ["ヴェルサイユ体制", 15, "サン＝ジェルマン条約", "オーストリアとの講和。", true], ["ヴェルサイユ体制", 15, "セーヴル条約", "オスマン帝国との講和。", true], ["国際連盟", 15, "ジュネーヴ", "国際連盟本部。", true], ["国際連盟", 15, "常設国際司法裁判所", "国際連盟の関連機関。", true], ["国際連盟", 15, "国際労働機関（ILO）", "労働問題を扱う。", true]];
+const SOURCES = [{"name": "外務省「史料と解説」", "url": "https://www.mofa.go.jp/mofaj/ms/da/page25_001749.html", "note": "日清修好条規・日朝修好条規・日露戦争・ポーツマス講和条約などの確認に使用。"}, {"name": "アジア歴史資料センター「日清戦争」", "url": "https://www.jacar.go.jp/learning/term.html?uid=Y30C300029", "note": "日清戦争の経緯・講和までの流れを確認。"}, {"name": "アジア歴史資料センター「日露戦争」", "url": "https://www.jacar.go.jp/learning/term.html?uid=Y30C200037", "note": "日露戦争の背景・経緯を確認。"}, {"name": "国立公文書館「条約改正交渉」", "url": "https://www.archives.go.jp/exhibition/digital/modean_state/contents/negotiation/index.html", "note": "明治政府の不平等条約改正が重要外交課題だったことを確認。"}, {"name": "国際連合「Predecessor: The League of Nations」", "url": "https://www.un.org/en/about-us/history-of-the-un/predecessor", "note": "国際連盟の成立と1946年の解散を確認。"}, {"name": "日本銀行百年史「日露戦争時の本行施策」", "url": "https://www.boj.or.jp/about/outline/history/hyakunen/data/hyaku2_3_5.pdf", "note": "日露戦争の戦費が17億円規模だったことを確認。プリントp.6の表の取り違えを補正。"}];
+const store = {
+ get(k,d){try{return JSON.parse(localStorage.getItem(k)) ?? d}catch(e){return d}},
+ set(k,v){localStorage.setItem(k,JSON.stringify(v))}
+};
+let stats = store.get('hist_stats',{correct:0,total:0});
+let mistakes = new Set(store.get('hist_mistakes',[]));
+let learned = new Set(store.get('hist_terms',[]));
+let current=[], idx=0, answered=false;
+
+function norm(s){
+ return (s||'').trim().toLowerCase()
+   .replace(/[＝=・･\s　\-—–ー]/g,'')
+   .replace(/[()（）「」『』]/g,'')
+   .replace(/ヶ/g,'か').replace(/ヵ/g,'か')
+   .replace(/ヴ/g,'ブ');
+}
+function shuffle(a){return [...a].sort(()=>Math.random()-.5)}
+function showView(id){
+ document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));
+ document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));
+ if(id==='terms')renderTerms(); if(id==='mistakes')renderMistakes(); updateDash();
+}
+document.querySelectorAll('nav button').forEach(b=>{
+  b.addEventListener('click', ()=>showView(b.dataset.view), {passive:true});
+  b.addEventListener('touchend', (e)=>{
+    e.preventDefault();
+    showView(b.dataset.view);
+  }, {passive:false});
+});
+
+function updateDash(){
+ document.getElementById('totalQ').textContent=QUESTIONS.length;
+ const acc=stats.total?Math.round(stats.correct/stats.total*100):0;
+ document.getElementById('accuracy').textContent=acc+'%';
+ document.getElementById('accbar').style.width=acc+'%';
+ document.getElementById('termProgress').textContent=`${learned.size} / ${TERMS.length}`;
+ document.getElementById('termbar').style.width=(TERMS.length?learned.size/TERMS.length*100:0)+'%';
+ document.getElementById('mistakeCount').textContent=mistakes.size;
+}
+function startFromControls(){
+ startQuiz(document.getElementById('quizMode').value, parseInt(document.getElementById('quizLen').value));
+}
+function startQuiz(mode,len){
+ let pool=QUESTIONS.filter(q=>{
+   if(mode==='priority') return q.priority;
+   if(mode==='input') return q.type==='input';
+   if(mode==='mcq') return q.type==='mcq';
+   return true;
+ });
+ current=shuffle(pool).slice(0,Math.min(len,pool.length)); idx=0; answered=false;
+ showView('quiz'); renderQuestion();
+}
+function renderQuestion(){
+ const area=document.getElementById('quizArea');
+ if(!current.length){area.innerHTML='<p>条件に合う問題がありません。</p>';return}
+ if(idx>=current.length){
+   area.innerHTML=`<h2>終了！</h2><p>このセットは完了です。間違えた問題は「間違い復習」に保存されています。</p><button type="button" onclick="startFromControls()">もう一度</button>`;
+   updateDash();return;
+ }
+ const q=current[idx];
+ const badges=`<span class="badge">p.${q.page}</span><span class="badge">${q.section}</span>${q.priority?'<span class="badge hot">★重要</span>':''}${q.color?'<span class="badge color">色付き</span>':''}${q.verified?'<span class="badge">Web検証</span>':''}`;
+ let body='';
+ if(q.type==='mcq'){
+   body='<div class="choices">'+shuffle(q.choices).map(c=>`<button type="button" class="choice" onclick='answerMCQ(${JSON.stringify(c)})'>${c}</button>`).join('')+'</div>';
+ }else{
+   body=`<div class="inputrow"><input id="answerInput" type="text" placeholder="答えを入力" onkeydown="if(event.key==='Enter')answerInput()"><button type="button" onclick="answerInput()">判定</button></div>`;
+ }
+ area.innerHTML=`<div class="small">問題 ${idx+1} / ${current.length}</div>${badges}<div class="qtext">${q.q}</div>${body}<div id="feedback"></div>`;
+ answered=false;
+}
+function markResult(q,ok,answerText){
+ stats.total++; if(ok){stats.correct++;mistakes.delete(q.id)}else{mistakes.add(q.id)}
+ store.set('hist_stats',stats); store.set('hist_mistakes',[...mistakes]);
+ const correct = q.type==='mcq'?q.a:q.answers.join(' / ');
+ document.getElementById('feedback').innerHTML=`<div class="feedback"><b>${ok?'○ 正解':'× 不正解'}</b><br>正解: <b>${correct}</b><br>${q.ex}</div><div style="margin-top:12px"><button type="button" onclick="nextQ()">次へ</button></div>`;
+ answered=true; updateDash();
+}
+function answerMCQ(c){
+ if(answered)return; const q=current[idx]; const ok=c===q.a;
+ document.querySelectorAll('.choice').forEach(btn=>{
+   if(btn.textContent===q.a)btn.classList.add('correct');
+   else if(btn.textContent===c&&!ok)btn.classList.add('wrong');
+   btn.disabled=true;
+ });
+ markResult(q,ok,c);
+}
+function answerInput(){
+ if(answered)return; const q=current[idx]; const val=document.getElementById('answerInput').value;
+ const ok=q.answers.some(a=>norm(a)===norm(val));
+ markResult(q,ok,val);
+}
+function nextQ(){idx++;renderQuestion()}
+function renderTerms(){
+ const query=norm(document.getElementById('termSearch')?.value||'');
+ const filtered=TERMS.filter(t=>!query || norm(t[2]+t[3]+t[0]).includes(query));
+ let groups={}; filtered.forEach(t=>(groups[t[0]]??=[]).push(t));
+ let out='';
+ Object.entries(groups).forEach(([g,arr])=>{
+   out+=`<h2 class="sectiontitle">${g}</h2><div class="card">`;
+   arr.forEach(t=>{
+     const key=t[0]+'|'+t[2]; const done=learned.has(key);
+     out+=`<div class="term"><div><h3>${t[2]} ${t[4]?'<span class="badge hot">★</span>':''}<span class="badge">p.${t[1]}</span></h3><p>${t[3]}</p></div><button type="button" class="checkbtn ${done?'learned':''}" onclick='toggleTerm(${JSON.stringify(key)})'>${done?'✓ 覚えた':'未チェック'}</button></div>`;
+   }); out+='</div>';
+ });
+ document.getElementById('termArea').innerHTML=out||'<div class="card">該当なし</div>'; updateDash();
+}
+function toggleTerm(k){learned.has(k)?learned.delete(k):learned.add(k);store.set('hist_terms',[...learned]);renderTerms()}
+function resetTerms(){if(confirm('用語チェックをすべてリセットしますか？')){learned.clear();store.set('hist_terms',[]);renderTerms()}}
+function renderMistakes(){
+ const qs=QUESTIONS.filter(q=>mistakes.has(q.id));
+ document.getElementById('mistakeArea').innerHTML=qs.length?`<h2>${qs.length}問</h2>`+qs.map(q=>`<p><span class="badge">p.${q.page}</span> ${q.q}</p>`).join(''):'<p>現在、要復習の問題はありません。</p>';
+}
+function startMistakeQuiz(){
+ const pool=QUESTIONS.filter(q=>mistakes.has(q.id)); if(!pool.length){alert('要復習の問題はありません。');return}
+ current=shuffle(pool);idx=0;showView('quiz');renderQuestion();
+}
+function clearMistakes(){if(confirm('間違い履歴を消しますか？')){mistakes.clear();store.set('hist_mistakes',[]);renderMistakes();updateDash()}}
+function renderSources(){
+ document.getElementById('sourceArea').innerHTML=SOURCES.map(s=>`<div class="source"><a href="${s.url}" target="_blank" rel="noopener">${s.name}</a><div class="small" style="margin-top:6px">${s.note}</div></div>`).join('');
+}
+
+// Mobile fallback: make dynamically generated controls reliably tappable.
+document.addEventListener('touchstart', function(){}, {passive:true});
+
+document.addEventListener('pointerup', (e)=>{
+  const el = e.target.closest && e.target.closest('button');
+  if (!el) return;
+  el.blur?.();
+});
+
+updateDash(); renderSources();
+</script>
+</body>
+</html>
